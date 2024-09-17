@@ -91,7 +91,7 @@ def register():
         username = request.form.get('username')
         email = request.form.get('email')
         password = request.form.get('password')
-        # Generate Password-Hash (default hashing method gets used "pbkdf2:sha256")
+        # Generiert Password-Hash default hashing Methode "pbkdf2:sha256"
         hashed_password = generate_password_hash(password)
         new_user = User(username=username, email=email, password=hashed_password)
         db.session.add(new_user)
