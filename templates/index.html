@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Inventarübersicht</h2>
+<table>
+    <thead>
+        <tr>
+            <th>Gerätetyp</th>
+            <th>Marke</th>
+            <th>Hostname</th>
+            <th>Aktionen</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for device in devices %}
+        <tr>
+            <td>{{ device.device_type }}</td>
+            <td>{{ device.brand }}</td>
+            <td>{{ device.hostname }}</td>
+            <td>
+                <form action="{{ url_for('delete_device', device_id=device.id) }}" method="POST" style="display:inline;">
+                    <input type="hidden" name="device_id" value="{{ device.id }}">
+                    <button type="submit" onclick="return confirm('Willst du dieses Gerät wirklich löschen?');">Löschen</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+{% endblock %}

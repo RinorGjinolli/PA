@@ -1,0 +1,20 @@
+{% extends 'base.html' %}
+{% block content %}
+<h2>Neues Gerät hinzufügen</h2>
+<form method="POST">
+    {{ form.hidden_tag() }}
+    <div>
+        <label for="device_type">Gerätetyp:</label>
+        {{ form.device_type() }}
+    </div>
+    <div>
+        <label for="brand">Marke:</label>
+        {{ form.brand() }}
+    </div>
+    <div>
+        <label for="hostname">Hostname:</label>
+        {{ form.hostname() }}
+    </div>
+    <button type="submit">Gerät hinzufügen</button>
+</form>
+{% endblock %}
