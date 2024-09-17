@@ -1,6 +1,6 @@
 """
-This script runs the application using a development server.
-It contains the definition of routes and views for the application.
+Dieses Skript fuehrt die Anwendung mit einem Entwicklungsserver aus.
+Es enthaelt die Definition der Routen und Ansichten fuer die Anwendung.
 """
 
 from flask import Flask, render_template, redirect, url_for, flash, request
@@ -13,23 +13,27 @@ from flask_sqlalchemy import SQLAlchemy
 from flask_migrate import Migrate
 
 app = Flask(__name__)
-# MySQL Connection String
+
+# MySQL-Verbindungsstring zur Datenbank
 app.config['SQLALCHEMY_DATABASE_URI'] = 'mysql://user:Test@localhost:3306/VCID'
-# Secret Key for App
+
+# Geheimschluessel fuer die App (wird fuer Sessions und Formulare verwendet)
 app.config['SECRET_KEY'] = 'SECRETKEY'
  
-# SQLAlchemy Initialisierung for DB
+# Initialisierung von SQLAlchemy fuer die Datenbankverbindung
 db = SQLAlchemy()
 db.init_app(app)
  
-# Database Models:
+# Datenbankmodelle:
 class User(UserMixin, db.Model):
+     # Tabelle fuer Benutzer
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(150), nullable=False, unique=True)
     email = db.Column(db.String(150), nullable=False, unique=True)
     password = db.Column(db.String(250), nullable=False)
 
 class Device(db.Model):
+    # Tabelle fuer Geräte
     id = db.Column(db.Integer, primary_key=True)
     device_type = db.Column(db.String(50), nullable=False)
     brand = db.Column(db.String(50), nullable=False)
@@ -37,56 +41,50 @@ class Device(db.Model):
     owner_id = db.Column(db.Integer, db.ForeignKey('user.id'))
     owner = db.relationship('User', backref='devices')
  
-# Migrate Object of DB-Model in App
+# Flask-Migrate-Objekt, um Datenbankmigrationen zu verwalten
 migrate = Migrate(app, db)
 
+# Formular fuer die Benutzeranmeldung
 class LoginForm(FlaskForm):
     email = StringField('Email', validators=[InputRequired(), Email()])
     password = PasswordField('Password', validators=[InputRequired()])
     submit = SubmitField('Login')
 
+# Formular fuer die Benutzerregistrierung
 class RegisterForm(FlaskForm):
     username = StringField('Username', validators=[InputRequired(), Length(min=4, max=20)])
     email = StringField('Email', validators=[InputRequired(), Email()])
     password = PasswordField('Password', validators=[InputRequired()])
     submit = SubmitField('Register')
 
+# Formular zum Hinzufuegen eines neuen Geraets
 class AddDeviceForm(FlaskForm):
     device_type = SelectField('Geraetetyp', choices=[('Notebook', 'Notebook'), ('Tower', 'Tower')], validators=[InputRequired()])
     brand = StringField('Marke', validators=[InputRequired(), Length(min=2, max=50)])
     hostname = StringField('Hostname', validators=[InputRequired(), Length(min=2, max=50)])
     submit = SubmitField('Geraet hinzufuegen')
 
-# Make the WSGI interface available at the top level so wfastcgi can get it.
+# Macht die WSGI-Schnittstelle auf oberster Ebene verfuegbar
 wsgi_app = app.wsgi_app
 
+# Initialisierung des Login-Managers fuer Benutzer-Authentifizierung
 login_manager = LoginManager()
 login_manager.init_app(app)
 login_manager.login_view = 'login'
 
-
+# Laedt den Benutzer basierend auf der Benutzer-ID (wird fuer die Sitzung verwendet)
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
+# Route fuer die Startseite, die eine Uebersicht der Geraete anzeigt (nur fuer angemeldete Benutzer)
 @app.route('/')
 @login_required
 def index():
     devices = Device.query.all()
     return render_template('index.html', devices=devices)
 
-@app.route('/login', methods=['GET', 'POST'])
-def login():
-    if request.method == 'POST':
-        email = request.form.get('email')
-        password = request.form.get('password')
-        user = User.query.filter_by(email=email).first()
-        if user and check_password_hash(user.password, password):
-            login_user(user)
-            return redirect(url_for('index'))
-        flash('Login fehlgeschlagen. Ueberpruefe deine Anmeldedaten.')
-    return render_template('login.html')
-
+# Route fuer die Benutzerregistrierung
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -101,12 +99,27 @@ def register():
         return redirect(url_for('login'))
     return render_template('register.html')
 
+# Route fuer das Benutzer-Login
+@app.route('/login', methods=['GET', 'POST'])
+def login():
+    if request.method == 'POST':
+        email = request.form.get('email')
+        password = request.form.get('password')
+        user = User.query.filter_by(email=email).first()
+        if user and check_password_hash(user.password, password):
+            login_user(user)
+            return redirect(url_for('index'))
+        flash('Login fehlgeschlagen. Ueberpruefe deine Anmeldedaten.')
+    return render_template('login.html')
+
+# Route fuer das Benutzer-Logout
 @app.route('/logout')
 @login_required
 def logout():
     logout_user()
     return redirect(url_for('login'))
 
+# Route zum Hinzufuegen eines neuen Geraets (nur fuer angemeldete Benutzer)
 @app.route('/add_device', methods=['GET', 'POST'])
 @login_required
 def add_device():
@@ -124,12 +137,13 @@ def add_device():
         return redirect(url_for('index'))
     return render_template('add_device.html', form=form)
 
+# Route zum Loeschen eines Geraets (nur fuer angemeldete Benutzer)
 @app.route('/delete_device/<int:device_id>', methods=['POST'])
 @login_required
 def delete_device(device_id):
     device = Device.query.get_or_404(device_id)
     
-    # Ueberpruefe, ob der Benutzer der Eigentuemer des Geraets ist
+    # Ueberpruefen, ob der angemeldete Benutzer der Eigentuemer des Geraets ist
     if device.owner_id != current_user.id:
         flash('Du bist nicht berechtigt, dieses Geraet zu loeschen.', 'danger')
         return redirect(url_for('index'))
@@ -139,6 +153,7 @@ def delete_device(device_id):
     flash('Geraet erfolgreich geloescht!', 'success')
     return redirect(url_for('index'))
 
+# Startet die Flask-App, wenn das Skript direkt ausgefuehrt wird
 if __name__ == '__main__':
     import os
     HOST = os.environ.get('SERVER_HOST', 'localhost')
