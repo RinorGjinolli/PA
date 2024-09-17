@@ -116,7 +116,7 @@ def add_device():
             device_type=form.device_type.data,
             brand=form.brand.data,
             hostname=form.hostname.data,
-            owner_id=current_user.id  # Aktueller Benutzer als Eigentümer
+            owner_id=current_user.id  # Aktueller Benutzer als Eigentuemer
         )
         db.session.add(new_device)
         db.session.commit()
@@ -129,7 +129,7 @@ def add_device():
 def delete_device(device_id):
     device = Device.query.get_or_404(device_id)
     
-    # Überprüfe, ob der Benutzer der Eigentümer des Geräts ist
+    # Ueberpruefe, ob der Benutzer der Eigentuemer des Geraets ist
     if device.owner_id != current_user.id:
         flash('Du bist nicht berechtigt, dieses Geraet zu loeschen.', 'danger')
         return redirect(url_for('index'))
